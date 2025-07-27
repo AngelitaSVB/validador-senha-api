@@ -8,6 +8,7 @@ on:
 jobs:
   criar-release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
@@ -22,16 +23,16 @@ jobs:
         run: |
           EXISTING=$(git ls-remote --heads origin "refs/heads/release/*" | awk -F'/' '{print $NF}' | sort -V)
           LAST=$(echo "$EXISTING" | tail -n1 | sed 's/release\///')
-          NEXT=$((LAST + 1))
-          echo "Última release encontrada: $LAST"
-          echo "Próxima será release/$NEXT"
+          if [[ -z "$LAST" ]]; then
+            NEXT=1
+          else
+            NEXT=$((LAST + 1))
+          fi
           echo "next_release=release/$NEXT" >> $GITHUB_OUTPUT
 
       - name: Criar e subir nova branch release
         run: |
           git fetch origin
           git checkout -b ${{ steps.next_release.outputs.next_release }}
-          git push origin ${{ steps.next_release.outputs.next_release }}
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
 
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
