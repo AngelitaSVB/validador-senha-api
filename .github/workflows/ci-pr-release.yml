@@ -35,3 +35,4 @@ jobs:
           git fetch origin
           git checkout -b ${{ steps.next_release.outputs.next_release }}
           git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
+
