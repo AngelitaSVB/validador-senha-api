@@ -8,6 +8,8 @@ on:
 jobs:
   criar-release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }} 
 
     steps:
       - name: Checkout do código
@@ -35,5 +37,3 @@ jobs:
           git fetch origin
           git checkout -b ${{ steps.next_release.outputs.next_release }}
           git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
-
-
