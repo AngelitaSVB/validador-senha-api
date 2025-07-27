@@ -8,6 +8,7 @@ on:
 jobs:
   criar-release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
@@ -29,11 +30,8 @@ jobs:
           fi
           echo "next_release=release/$NEXT" >> $GITHUB_OUTPUT
 
-     
-          - name: Criar e subir nova branch release
-          run: |
-            git fetch origin
-            git checkout -b ${{ steps.next_release.outputs.next_release }}
-            git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
-
-
+      - name: Criar e subir nova branch release
+        run: |
+          git fetch origin
+          git checkout -b ${{ steps.next_release.outputs.next_release }}
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
