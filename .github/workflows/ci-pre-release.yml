@@ -29,11 +29,11 @@ jobs:
           fi
           echo "next_release=release/$NEXT" >> $GITHUB_OUTPUT
 
-      - name: Criar e subir nova branch release
-        run: |
-          git fetch origin
-          git checkout -b ${{ steps.next_release.outputs.next_release }}
-          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
+     
+          - name: Criar e subir nova branch release
+          run: |
+            git fetch origin
+            git checkout -b ${{ steps.next_release.outputs.next_release }}
+            git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.next_release.outputs.next_release }}
 
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
