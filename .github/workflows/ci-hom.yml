@@ -1,16 +1,16 @@
-name: Deploy Prod com Terraform
+name: Deploy Hom com Terraform
 
 on:
   push:
     branches:
-      - main
+      - homolog
   pull_request:
     branches:
-      - main
+      - homolog
       
 jobs:
   terraform:
-    name: Terraform Apply (PROD)
+    name: Terraform Apply (HOM)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,19 +23,19 @@ jobs:
           terraform_version: 1.6.6
 
       - name: Inicializar Terraform
-        working-directory: terraform/prod
+        working-directory: terraform/hom
         run: terraform init
 
       - name: Validar código
-        working-directory: terraform/prod
+        working-directory: terraform/hom
         run: terraform validate
 
       - name: Importar bucket existente no state (se necessário)
-        working-directory: terraform/prod
-        run: terraform import aws_s3_bucket.placeholder validador-prod-placeholder || true
+        working-directory: terraform/hom
+        run: terraform import aws_s3_bucket.placeholder validador-hom-placeholder || true
 
       - name: Aplicar alterações na AWS
-        working-directory: terraform/prod
+        working-directory: terraform/hom
         run: terraform apply -auto-approve
 
     env:
