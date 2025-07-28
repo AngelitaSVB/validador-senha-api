@@ -40,6 +40,13 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version> <!-- ou versão mais recente -->
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Swagger (opcional) -->
         <dependency>
             <groupId>org.springdoc</groupId>
