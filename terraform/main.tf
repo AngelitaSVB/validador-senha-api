@@ -2,7 +2,6 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-# Sufixo aleatório para evitar conflitos de nomes
 resource "random_id" "suffix" {
   byte_length = 2
 }
@@ -32,7 +31,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Grupo de logs do CloudWatch
 resource "aws_cloudwatch_log_group" "validador_logs" {
   name              = "/ecs/validador-${random_id.suffix.hex}"
   retention_in_days = 7
@@ -65,8 +63,8 @@ resource "aws_ecs_task_definition" "validador_task" {
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}"
-          awslogs-region        = "sa-east-1"
+          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}",
+          awslogs-region        = "sa-east-1",
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -110,7 +108,7 @@ resource "aws_lb_target_group" "validador_tg" {
   target_type  = "ip"
 
   health_check {
-    path                = "/"
+    path                = "/actuator/health"
     protocol            = "HTTP"
     matcher             = "200-399"
     interval            = 30
