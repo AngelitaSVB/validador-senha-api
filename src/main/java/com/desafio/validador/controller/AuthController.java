@@ -9,7 +9,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/oauth")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {
+        "http://localhost:4200",
+        "http://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com"
+})
+
 public class AuthController {
 
     @Value("${CLIENT_ID}")
