@@ -83,10 +83,11 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb_target_group" "validador_tg" {
-  name     = "validador-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name         = "validador-tg"
+  port         = 8080
+  protocol     = "HTTP"
+  vpc_id       = var.vpc_id
+  target_type  = "ip"  
 
   health_check {
     path                = "/"
