@@ -1,0 +1,32 @@
+# Arquivo: .github/workflows/terraform-destroy.yml
+
+name: Destroy AWS Infraestrutura
+
+on:
+  workflow_dispatch:  # Permite rodar manualmente no GitHub
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Inicializar Terraform
+        run: terraform init
+
+      - name: Validar configuração
+        run: terraform validate
+
+      - name: Executar Terraform Destroy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: terraform destroy -auto-approve
