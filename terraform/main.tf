@@ -1,4 +1,3 @@
-
 provider "aws" {
   region = "sa-east-1"
 }
@@ -28,8 +27,14 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# NOVO: grupo de log para CloudWatch
+resource "aws_cloudwatch_log_group" "validador_logs" {
+  name              = "/ecs/validador"
+  retention_in_days = 7
+}
+
 resource "aws_ecs_task_definition" "validador_task" {
-  family                   = "validador-task"
+  family                   = "validador-task-v2"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
@@ -49,7 +54,16 @@ resource "aws_ecs_task_definition" "validador_task" {
       environment = [
         { name = "CLIENT_ID", value = var.client_id },
         { name = "CLIENT_SECRET", value = var.client_secret }
-      ]
+      ],
+      # NOVO: Configuração dos logs
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = "/ecs/validador",
+          awslogs-region        = "sa-east-1",
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 }
@@ -87,7 +101,7 @@ resource "aws_lb_target_group" "validador_tg" {
   port         = 8080
   protocol     = "HTTP"
   vpc_id       = var.vpc_id
-  target_type  = "ip"  
+  target_type  = "ip"
 
   health_check {
     path                = "/"
