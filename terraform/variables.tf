@@ -1,25 +1,24 @@
-
 variable "image_url" {
-  description = "Docker image usada pelo ECS"
+  description = "URL da imagem Docker"
   type        = string
 }
 
 variable "client_id" {
-  description = "Client ID para autenticação"
+  description = "Client ID da aplicação"
   type        = string
 }
 
 variable "client_secret" {
-  description = "Client Secret para autenticação"
+  description = "Client Secret da aplicação"
   type        = string
 }
 
 variable "vpc_id" {
-  description = "ID da VPC"
+  description = "VPC onde o serviço será executado"
   type        = string
 }
 
 variable "subnet_ids" {
-  description = "Lista de Subnets"
+  description = "Subnets públicas da VPC"
   type        = list(string)
 }
