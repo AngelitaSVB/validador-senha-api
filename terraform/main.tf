@@ -2,12 +2,17 @@ provider "aws" {
   region = "sa-east-1"
 }
 
+# Sufixo aleatório para evitar conflitos de nomes
+resource "random_id" "suffix" {
+  byte_length = 2
+}
+
 resource "aws_ecs_cluster" "validador_cluster" {
   name = "validador-cluster"
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
+  name = "ecsTaskExecutionRole-${random_id.suffix.hex}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -27,14 +32,14 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# NOVO: grupo de log para CloudWatch
+# Grupo de logs do CloudWatch
 resource "aws_cloudwatch_log_group" "validador_logs" {
-  name              = "/ecs/validador"
+  name              = "/ecs/validador-${random_id.suffix.hex}"
   retention_in_days = 7
 }
 
 resource "aws_ecs_task_definition" "validador_task" {
-  family                   = "validador-task"
+  family                   = "validador-task-${random_id.suffix.hex}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
@@ -46,21 +51,22 @@ resource "aws_ecs_task_definition" "validador_task" {
       name      = "validador"
       image     = var.image_url
       essential = true
-      portMappings = [{
-        containerPort = 8080,
-        hostPort      = 8080,
-        protocol      = "tcp"
-      }],
+      portMappings = [
+        {
+          containerPort = 8080
+          hostPort      = 8080
+          protocol      = "tcp"
+        }
+      ],
       environment = [
         { name = "CLIENT_ID", value = var.client_id },
         { name = "CLIENT_SECRET", value = var.client_secret }
       ],
-      # NOVO: Configuração dos logs
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/validador",
-          awslogs-region        = "sa-east-1",
+          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}"
+          awslogs-region        = "sa-east-1"
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -69,7 +75,7 @@ resource "aws_ecs_task_definition" "validador_task" {
 }
 
 resource "aws_lb" "validador_lb" {
-  name               = "validador-lb"
+  name               = "validador-lb-${random_id.suffix.hex}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb_sg.id]
@@ -77,7 +83,7 @@ resource "aws_lb" "validador_lb" {
 }
 
 resource "aws_security_group" "lb_sg" {
-  name        = "validador-lb-sg"
+  name        = "validador-lb-sg-${random_id.suffix.hex}"
   description = "Allow HTTP inbound traffic"
   vpc_id      = var.vpc_id
 
@@ -97,7 +103,7 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb_target_group" "validador_tg" {
-  name         = "validador-tg"
+  name         = "validador-tg-${random_id.suffix.hex}"
   port         = 8080
   protocol     = "HTTP"
   vpc_id       = var.vpc_id
@@ -126,7 +132,7 @@ resource "aws_lb_listener" "validador_listener" {
 }
 
 resource "aws_ecs_service" "validador_service" {
-  name            = "validador-service"
+  name            = "validador-service-${random_id.suffix.hex}"
   cluster         = aws_ecs_cluster.validador_cluster.id
   task_definition = aws_ecs_task_definition.validador_task.arn
   launch_type     = "FARGATE"
@@ -145,4 +151,9 @@ resource "aws_ecs_service" "validador_service" {
   }
 
   depends_on = [aws_lb_listener.validador_listener]
+}
+
+output "alb_dns_name" {
+  description = "DNS público do Load Balancer"
+  value       = aws_lb.validador_lb.dns_name
 }
