@@ -1,8 +1,25 @@
 
-variable "image_url" {}
-variable "client_id" {}
-variable "client_secret" {}
-variable "vpc_id" {}
+variable "image_url" {
+  description = "Docker image usada pelo ECS"
+  type        = string
+}
+
+variable "client_id" {
+  description = "Client ID para autenticação"
+  type        = string
+}
+
+variable "client_secret" {
+  description = "Client Secret para autenticação"
+  type        = string
+}
+
+variable "vpc_id" {
+  description = "ID da VPC"
+  type        = string
+}
+
 variable "subnet_ids" {
-  type = list(string)
+  description = "Lista de Subnets"
+  type        = list(string)
 }
