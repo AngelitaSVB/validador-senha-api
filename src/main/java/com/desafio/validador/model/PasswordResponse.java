@@ -1,22 +1,13 @@
-
 package com.desafio.validador.model;
+
+import lombok.Data;
+import lombok.AllArgsConstructor;
 
 import java.util.List;
 
+@Data
+@AllArgsConstructor
 public class PasswordResponse {
     private boolean valido;
     private List<String> motivos;
-
-    public PasswordResponse(boolean valido, List<String> motivos) {
-        this.valido = valido;
-        this.motivos = motivos;
-    }
-
-    public boolean isValido() {
-        return valido;
-    }
-
-    public List<String> getMotivos() {
-        return motivos;
-    }
 }
