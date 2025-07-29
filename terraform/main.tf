@@ -34,7 +34,7 @@ resource "aws_cloudwatch_log_group" "validador_logs" {
 }
 
 resource "aws_ecs_task_definition" "validador_task" {
-  family                   = "validador-task-v2"
+  family                   = "validador-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
