@@ -1,0 +1,51 @@
+name: Deploy Backend to AWS
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build do projeto
+        run: ./mvnw clean package -DskipTests
+
+      - name: Login no Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build e push da imagem Docker
+        run: |
+          docker build -t validador-api:latest .
+          docker tag validador-api:latest ${{ secrets.DOCKER_USERNAME }}/validador-api:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/validador-api:latest
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: sa-east-1
+
+      - name: Deploy com Terraform
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve \
+            -var="image_url=${{ secrets.DOCKER_USERNAME }}/validador-api:latest" \
+            -var="client_id=frontend-itau" \
+            -var="client_secret=segredo123" \
+            -var="vpc_id=${{ secrets.VPC_ID }}" \
+            -var='subnet_ids=["${{ secrets.SUBNET1_ID }}","${{ secrets.SUBNET2_ID }}"]'
