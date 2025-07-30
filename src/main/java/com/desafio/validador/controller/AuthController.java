@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
@@ -15,8 +16,13 @@ import java.util.Map;
 @RequestMapping("/oauth")
 @CrossOrigin(origins = {
         "http://localhost:4200",
+<<<<<<< HEAD
         "https://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
         "https://87eua3p1ff.execute-api.sa-east-1.amazonaws.com/dev"
+=======
+        "http://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
+        "https://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com"
+>>>>>>> dbe3a63 (Configuração do JWT)
 })
 public class AuthController {
 
@@ -26,12 +32,20 @@ public class AuthController {
     @Value("${CLIENT_SECRET}")
     private String clientSecret;
 
-    private static final SecretKey secretKey = Keys.hmacShaKeyFor("itau-secret-itau-secret-itau-secret".getBytes());
+    @Value("${JWT_SECRET}")
+    private String jwtSecret;
+
+    private SecretKey secretKey;
+
+    @PostConstruct
+    public void init() {
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    }
 
     @PostMapping("/token")
     public ResponseEntity<?> gerarToken(@RequestParam String grant_type,
-                                        @RequestParam String client_id,
-                                        @RequestParam String client_secret) {
+            @RequestParam String client_id,
+            @RequestParam String client_secret) {
 
         if ("client_credentials".equals(grant_type)
                 && client_id.equals(clientId)
@@ -47,8 +61,7 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "access_token", jwt,
                     "token_type", "Bearer",
-                    "expires_in", "3600"
-            ));
+                    "expires_in", "3600"));
         } else {
             return ResponseEntity.status(401).body("Credenciais inválidas");
         }

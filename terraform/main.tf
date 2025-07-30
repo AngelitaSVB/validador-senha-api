@@ -46,25 +46,35 @@ resource "aws_ecs_task_definition" "validador_task" {
 
   container_definitions = jsonencode([
     {
-      name      = "validador"
-      image     = var.image_url
-      essential = true
+      name      = "validador",
+      image     = var.image_url,
+      essential = true,
       portMappings = [
         {
-          containerPort = 8080
-          hostPort      = 8080
+          containerPort = 8080,
+          hostPort      = 8080,
           protocol      = "tcp"
         }
       ],
       environment = [
-        { name = "CLIENT_ID", value = var.client_id },
-        { name = "CLIENT_SECRET", value = var.client_secret }
+        {
+          name  = "CLIENT_ID"
+          value = var.client_id
+        },
+        {
+          name  = "CLIENT_SECRET"
+          value = var.client_secret
+        },
+        {
+          name  = "JWT_SECRET"
+          value = var.jwt_secret
+        }
       ],
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}",
-          awslogs-region        = "sa-east-1",
+          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}"
+          awslogs-region        = "sa-east-1"
           awslogs-stream-prefix = "ecs"
         }
       }
