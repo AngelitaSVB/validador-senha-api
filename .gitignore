@@ -20,9 +20,9 @@
 *.iml
 
 # Terraform
-.terraform/
+#.terraform/
 terraform.tfstate*
-terraform.tfvars
+#terraform.tfvars
 crash.log
 
 # Sistema operacional
