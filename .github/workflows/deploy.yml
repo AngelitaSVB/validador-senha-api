@@ -44,7 +44,7 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      - name: Deploy com Terraform
+      - name: Deploy da infraestrutura do backend (ECS)
         run: |
           cd terraform
           terraform init
@@ -54,3 +54,9 @@ jobs:
             -var="client_secret=segredo123" \
             -var="vpc_id=${{ secrets.VPC_ID }}" \
             -var='subnet_ids=["${{ secrets.SUBNET1_ID }}","${{ secrets.SUBNET2_ID }}"]'
+
+      - name: Deploy do API Gateway
+        run: |
+          cd ../infra/api-gateway
+          terraform init
+          terraform apply -auto-approve
