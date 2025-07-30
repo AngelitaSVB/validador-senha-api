@@ -22,3 +22,9 @@ variable "subnet_ids" {
   description = "Subnets públicas da VPC"
   type        = list(string)
 }
+
+variable "jwt_secret" {
+  description = "JWT secret for the backend"
+  type        = string
+}
+
