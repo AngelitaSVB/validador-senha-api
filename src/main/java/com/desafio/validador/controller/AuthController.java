@@ -15,7 +15,8 @@ import java.util.Map;
 @RequestMapping("/oauth")
 @CrossOrigin(origins = {
         "http://localhost:4200",
-        "http://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com"
+        "https://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
+        "https://87eua3p1ff.execute-api.sa-east-1.amazonaws.com/dev"
 })
 public class AuthController {
 
