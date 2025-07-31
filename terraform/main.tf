@@ -160,3 +160,77 @@ resource "aws_ecs_service" "validador_service" {
 
   depends_on = [aws_lb_listener.validador_listener]
 }
+
+# ------------------------------
+# API Gateway - Validador de Senha
+# ------------------------------
+
+resource "aws_api_gateway_rest_api" "validador_api" {
+  name        = "validador-senha-api"
+  description = "API Gateway para o validador de senha integrando com Load Balancer"
+}
+
+resource "aws_api_gateway_resource" "oauth" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_rest_api.validador_api.root_resource_id
+  path_part   = "oauth"
+}
+
+resource "aws_api_gateway_resource" "token" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_resource.oauth.id
+  path_part   = "token"
+}
+
+resource "aws_api_gateway_method" "post_token" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.token.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "token_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.token.id
+  http_method             = aws_api_gateway_method.post_token.http_method
+  integration_http_method = "POST"
+  type                    = "HTTP"
+  uri                     = "http://${aws_lb.main.dns_name}/oauth/token"
+}
+
+resource "aws_api_gateway_resource" "api" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_rest_api.validador_api.root_resource_id
+  path_part   = "api"
+}
+
+resource "aws_api_gateway_resource" "validar" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_resource.api.id
+  path_part   = "validar"
+}
+
+resource "aws_api_gateway_method" "post_validar" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.validar.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "validar_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.validar.id
+  http_method             = aws_api_gateway_method.post_validar.http_method
+  integration_http_method = "POST"
+  type                    = "HTTP"
+  uri                     = "http://${aws_lb.main.dns_name}/api/validar"
+}
+
+resource "aws_api_gateway_deployment" "validador_deploy" {
+  depends_on = [
+    aws_api_gateway_integration.token_integration,
+    aws_api_gateway_integration.validar_integration
+  ]
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  stage_name  = "dev"
+}
