@@ -5,35 +5,31 @@ import com.desafio.validador.model.PasswordResponse;
 import com.desafio.validador.service.PasswordService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {
-        "http://localhost:4200",
-        "http://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
-        "https://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
-        "https://87eua3p1ff.execute-api.sa-east-1.amazonaws.com/dev"
-})
 public class PasswordController {
 
-    @Autowired
-    private PasswordService passwordService;
+    private final PasswordService passwordService;
 
     @Value("${JWT_SECRET}")
     private String jwtSecret;
 
     private SecretKey secretKey;
+
+    public PasswordController(PasswordService passwordService) {
+        this.passwordService = passwordService;
+    }
 
     @PostConstruct
     public void initSecretKey() {
@@ -52,7 +48,9 @@ public class PasswordController {
             }
 
             String token = authorization.substring(7); // Remove "Bearer "
-            Jws<Claims> claims = Jwts.parserBuilder()
+
+            // Apenas valida o token, sem guardar o resultado
+            Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token);
