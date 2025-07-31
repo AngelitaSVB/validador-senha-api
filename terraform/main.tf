@@ -232,5 +232,10 @@ resource "aws_api_gateway_deployment" "validador_deploy" {
     aws_api_gateway_integration.validar_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.validador_api.id
-  stage_name  = "dev"
+}
+
+resource "aws_api_gateway_stage" "validador_stage" {
+  deployment_id = aws_api_gateway_deployment.validador_deploy.id
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  stage_name    = "dev"
 }
