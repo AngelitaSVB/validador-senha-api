@@ -14,11 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/oauth")
-@CrossOrigin(origins = {
-                "http://localhost:4200",
-                "http://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
-                "https://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com"
-})
 public class AuthController {
 
         @Value("${CLIENT_ID}")
@@ -38,7 +33,8 @@ public class AuthController {
         }
 
         @PostMapping("/token")
-        public ResponseEntity<?> gerarToken(@RequestParam String grant_type,
+        public ResponseEntity<?> gerarToken(
+                        @RequestParam String grant_type,
                         @RequestParam String client_id,
                         @RequestParam String client_secret) {
 
@@ -49,7 +45,7 @@ public class AuthController {
                         String jwt = Jwts.builder()
                                         .setSubject(client_id)
                                         .setIssuedAt(new Date())
-                                        .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hora
+                                        .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1h
                                         .signWith(secretKey, SignatureAlgorithm.HS256)
                                         .compact();
 
