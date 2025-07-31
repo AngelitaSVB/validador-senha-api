@@ -239,3 +239,69 @@ resource "aws_api_gateway_stage" "validador_stage" {
   rest_api_id   = aws_api_gateway_rest_api.validador_api.id
   stage_name    = "dev"
 }
+
+# Resposta do método para /oauth/token
+resource "aws_api_gateway_method_response" "token_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = aws_api_gateway_method.post_token.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "token_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = aws_api_gateway_method.post_token.http_method
+  status_code = aws_api_gateway_method_response.token_method_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+  }
+
+  depends_on = [aws_api_gateway_integration.token_integration]
+}
+
+# Resposta do método para /api/validar
+resource "aws_api_gateway_method_response" "validar_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.validar.id
+  http_method = aws_api_gateway_method.post_validar.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "validar_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.validar.id
+  http_method = aws_api_gateway_method.post_validar.http_method
+  status_code = aws_api_gateway_method_response.validar_method_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+  }
+
+  depends_on = [aws_api_gateway_integration.validar_integration]
+}
