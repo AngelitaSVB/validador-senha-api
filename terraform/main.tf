@@ -195,7 +195,7 @@ resource "aws_api_gateway_integration" "token_integration" {
   http_method             = aws_api_gateway_method.post_token.http_method
   integration_http_method = "POST"
   type                    = "HTTP"
-  uri                     = "http://${aws_lb.main.dns_name}/oauth/token"
+  uri                     = "http://${aws_lb.validador_lb.dns_name}/oauth/token"
 }
 
 resource "aws_api_gateway_resource" "api" {
@@ -223,7 +223,7 @@ resource "aws_api_gateway_integration" "validar_integration" {
   http_method             = aws_api_gateway_method.post_validar.http_method
   integration_http_method = "POST"
   type                    = "HTTP"
-  uri                     = "http://${aws_lb.main.dns_name}/api/validar"
+  uri                     = "http://${aws_lb.validador_lb.dns_name}/api/validar"
 }
 
 resource "aws_api_gateway_deployment" "validador_deploy" {
