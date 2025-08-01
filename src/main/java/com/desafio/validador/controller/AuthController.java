@@ -3,6 +3,8 @@ package com.desafio.validador.controller;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/oauth")
 public class AuthController {
+
+        private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
         @Value("${CLIENT_ID}")
         private String clientId;
@@ -31,12 +35,15 @@ public class AuthController {
         @PostConstruct
         public void init() {
                 this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+                logger.info("JWT Secret initialized with key length: {}", jwtSecret.length());
         }
 
         @PostMapping("/token")
         public ResponseEntity<?> gerarToken(@RequestParam String grant_type,
                         @RequestParam String client_id,
                         @RequestParam String client_secret) {
+                logger.info("Requisição recebida em /oauth/token");
+                logger.debug("grant_type={}, client_id={}, client_secret={}", grant_type, client_id, client_secret);
 
                 if ("client_credentials".equals(grant_type)
                                 && client_id.equals(this.clientId)
@@ -49,11 +56,15 @@ public class AuthController {
                                         .signWith(secretKey, SignatureAlgorithm.HS256)
                                         .compact();
 
+                        logger.info("Token JWT gerado com sucesso para o client_id: {}", client_id);
+
                         return ResponseEntity.ok(Map.of(
                                         "access_token", accessToken,
                                         "token_type", "Bearer",
                                         "expires_in", 3600));
                 } else {
+                        logger.warn("Credenciais inválidas fornecidas: client_id={}, client_secret={}", client_id,
+                                        client_secret);
                         return ResponseEntity
                                         .status(HttpStatus.UNAUTHORIZED)
                                         .body(Map.of("error", "Credenciais inválidas"));
@@ -62,6 +73,7 @@ public class AuthController {
 
         @GetMapping("/health")
         public ResponseEntity<String> healthCheck() {
+                logger.info("Health check chamado com sucesso.");
                 return ResponseEntity.ok("OK");
         }
 }
