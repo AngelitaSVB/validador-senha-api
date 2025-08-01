@@ -1,5 +1,5 @@
-variable "backend_image_url" {
-  description = "URL da imagem Docker do backend"
+variable "image_url" {
+  description = "URL da imagem Docker"
   type        = string
 }
 
@@ -13,11 +13,6 @@ variable "client_secret" {
   type        = string
 }
 
-variable "jwt_secret" {
-  description = "JWT secret for the backend"
-  type        = string
-}
-
 variable "vpc_id" {
   description = "VPC onde o serviço será executado"
   type        = string
@@ -28,13 +23,8 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "execution_role_arn" {
-  description = "ARN da role de execução da task ECS"
-  type        = string
-}
-
-variable "task_role_arn" {
-  description = "ARN da role de permissão da task ECS"
+variable "jwt_secret" {
+  description = "JWT secret for the backend"
   type        = string
 }
 
