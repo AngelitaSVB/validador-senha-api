@@ -46,9 +46,9 @@ resource "aws_ecs_task_definition" "validador_task" {
 
   container_definitions = jsonencode([
     {
-      name      = "validador",
-      image     = var.image_url,
-      essential = true,
+      name        = "validador",
+      image       = var.image_url,
+      essential   = true,
       portMappings = [
         {
           containerPort = 8080,
@@ -57,24 +57,15 @@ resource "aws_ecs_task_definition" "validador_task" {
         }
       ],
       environment = [
-        {
-          name  = "CLIENT_ID"
-          value = var.client_id
-        },
-        {
-          name  = "CLIENT_SECRET"
-          value = var.client_secret
-        },
-        {
-          name  = "JWT_SECRET"
-          value = var.jwt_secret
-        }
+        { name = "CLIENT_ID",       value = "frontend-itau" },
+        { name = "CLIENT_SECRET", value = "segredo123" },
+        { name = "JWT_SECRET",      value = "itau-secret-itau-secret-itau-secret" }
       ],
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}"
-          awslogs-region        = "sa-east-1"
+          awslogs-group         = "/ecs/validador-${random_id.suffix.hex}",
+          awslogs-region        = "sa-east-1",
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -102,6 +93,13 @@ resource "aws_security_group" "lb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -111,14 +109,14 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb_target_group" "validador_tg" {
-  name         = "validador-tg-${random_id.suffix.hex}"
-  port         = 8080
-  protocol     = "HTTP"
-  vpc_id       = var.vpc_id
-  target_type  = "ip"
+  name        = "validador-tg-${random_id.suffix.hex}"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
 
   health_check {
-    path                = "/actuator/health"
+    path                = "/oauth/health"
     protocol            = "HTTP"
     matcher             = "200-399"
     interval            = 30
@@ -147,8 +145,8 @@ resource "aws_ecs_service" "validador_service" {
   desired_count   = 1
 
   network_configuration {
-    subnets         = var.subnet_ids
-    security_groups = [aws_security_group.lb_sg.id]
+    subnets          = var.subnet_ids
+    security_groups  = [aws_security_group.lb_sg.id]
     assign_public_ip = true
   }
 
@@ -159,4 +157,305 @@ resource "aws_ecs_service" "validador_service" {
   }
 
   depends_on = [aws_lb_listener.validador_listener]
+}
+
+resource "aws_api_gateway_rest_api" "validador_api" {
+  name        = "validador-senha-api"
+  description = "API Gateway para o validador de senha integrando com Load Balancer"
+}
+
+resource "aws_api_gateway_resource" "oauth" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_rest_api.validador_api.root_resource_id
+  path_part   = "oauth"
+}
+
+resource "aws_api_gateway_resource" "token" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_resource.oauth.id
+  path_part   = "token"
+}
+
+resource "aws_api_gateway_method" "post_token" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.token.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "token_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.token.id
+  http_method             = aws_api_gateway_method.post_token.http_method
+  integration_http_method = "POST"
+  type                    = "HTTP"
+  uri                     = "http://${aws_lb.validador_lb.dns_name}/oauth/token"
+  passthrough_behavior    = "WHEN_NO_MATCH"
+  content_handling        = "CONVERT_TO_TEXT"
+
+  request_parameters = {
+    "integration.request.header.Accept" = "'application/json'"
+  }
+}
+
+# --- Adição para o método OPTIONS em /oauth/token ---
+resource "aws_api_gateway_method" "options_token" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.token.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "options_token_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.token.id
+  http_method             = aws_api_gateway_method.options_token.http_method
+  type                    = "MOCK"
+  passthrough_behavior    = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+  depends_on = [
+    aws_api_gateway_method.options_token
+  ]
+}
+
+resource "aws_api_gateway_method_response" "options_token_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Headers" = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+  depends_on = [
+    aws_api_gateway_method.options_token
+  ]
+}
+
+resource "aws_api_gateway_integration_response" "options_token_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'",
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.options_token_integration,
+    aws_api_gateway_method_response.options_token_response # ADICIONADO: Depende da Method Response
+  ]
+}
+# --- Fim da adição para /oauth/token ---
+
+resource "aws_api_gateway_resource" "api" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_rest_api.validador_api.root_resource_id
+  path_part   = "api"
+}
+
+resource "aws_api_gateway_resource" "validar" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  parent_id   = aws_api_gateway_resource.api.id
+  path_part   = "validar"
+}
+
+resource "aws_api_gateway_method" "post_validar" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.validar.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "validar_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.validar.id
+  http_method             = aws_api_gateway_method.post_validar.http_method
+  integration_http_method = "POST"
+  type                    = "HTTP"
+  uri                     = "http://${aws_lb.validador_lb.dns_name}/api/validar"
+  passthrough_behavior    = "WHEN_NO_MATCH"
+  content_handling        = "CONVERT_TO_TEXT"
+
+  request_parameters = {
+    "integration.request.header.Accept" = "'application/json'"
+  }
+}
+
+resource "aws_api_gateway_deployment" "validador_deploy" {
+  depends_on = [
+    aws_api_gateway_integration.token_integration,
+    aws_api_gateway_method_response.token_response,
+    aws_api_gateway_integration_response.token_integration_response,
+
+    aws_api_gateway_method.options_token,
+    aws_api_gateway_integration.options_token_integration,
+    aws_api_gateway_method_response.options_token_response,
+    aws_api_gateway_integration_response.options_token_integration_response,
+
+    aws_api_gateway_integration.validar_integration,
+    aws_api_gateway_method_response.validar_response,
+    aws_api_gateway_integration_response.validar_integration_response,
+
+    aws_api_gateway_method.options_validar,
+    aws_api_gateway_integration.options_validar_integration,
+    aws_api_gateway_method_response.options_validar_response,
+    aws_api_gateway_integration_response.options_validar_integration_response
+  ]
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  triggers = {
+    redeployment = timestamp()
+  }
+}
+
+resource "aws_api_gateway_stage" "validador_stage" {
+  deployment_id = aws_api_gateway_deployment.validador_deploy.id
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  stage_name    = "dev"
+}
+
+resource "aws_api_gateway_method" "options_validar" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.validar.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "options_validar_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.validar.id
+  http_method             = aws_api_gateway_method.options_validar.http_method
+  type                    = "MOCK"
+  passthrough_behavior    = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+  depends_on = [
+    aws_api_gateway_method.options_validar
+  ]
+}
+
+resource "aws_api_gateway_method_response" "options_validar_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.validar.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Headers" = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+  depends_on = [
+    aws_api_gateway_method.options_validar
+  ]
+}
+
+resource "aws_api_gateway_integration_response" "options_validar_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.validar.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'",
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.options_validar_integration,
+    aws_api_gateway_method_response.options_validar_response # ADICIONADO: Depende da Method Response
+  ]
+}
+
+# ======= BLOCO ADICIONADO: Resposta do método /oauth/token (original, sem alterações aqui) =======
+resource "aws_api_gateway_method_response" "token_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = aws_api_gateway_method.post_token.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true,
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+  depends_on = [
+    aws_api_gateway_method.post_token
+  ]
+}
+
+resource "aws_api_gateway_integration_response" "token_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = aws_api_gateway_method.post_token.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
+    "method.response.header.Access-Control-Allow-Headers" = "'*'",
+    "method.response.header.Access-Control-Allow-Methods" = "'POST'"
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.token_integration,
+    aws_api_gateway_method_response.token_response # ADICIONADO: Depende da Method Response
+  ]
+}
+
+# ======= BLOCO ADICIONADO: Resposta do método /api/validar (original, sem alterações aqui) =======
+resource "aws_api_gateway_method_response" "validar_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.validar.id
+  http_method = aws_api_gateway_method.post_validar.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true,
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+  depends_on = [
+    aws_api_gateway_method.post_validar
+  ]
+}
+
+resource "aws_api_gateway_integration_response" "validar_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.validar.id
+  http_method = aws_api_gateway_method.post_validar.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
+    "method.response.header.Access-Control-Allow-Headers" = "'*'",
+    "method.response.header.Access-Control-Allow-Methods" = "'POST'"
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.validar_integration,
+    aws_api_gateway_method_response.validar_response # ADICIONADO: Depende da Method Response
+  ]
 }

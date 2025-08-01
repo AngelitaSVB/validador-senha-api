@@ -28,3 +28,7 @@ variable "jwt_secret" {
   type        = string
 }
 
+variable "region" {
+  description = "Região da AWS"
+  default     = "sa-east-1"
+}
