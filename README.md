@@ -148,8 +148,8 @@ Testes unitários implementados para validar as regras da senha.
 ## 👩‍💻 Autora
 
 **Angelita Vilas Boas**  
-Contadora em transição para tecnologia | Desenvolvedora Java & Angular  
-[LinkedIn](https://www.linkedin.com/in/angelitavilasboas)
+Desenvolvedora Front-end | Estudante de Ciência de Dados  
+Projeto realizado como desafio técnico
 
 
 
