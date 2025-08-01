@@ -215,10 +215,8 @@ resource "aws_api_gateway_integration" "options_token_integration" {
   request_templates = {
     "application/json" = "{\"statusCode\": 200}"
   }
-  # A integração mock não precisa de depends_on do método OPTIONS,
-  # mas a resposta da integração mock pode depender do método.
   depends_on = [
-    aws_api_gateway_method.options_token # Garante que o método OPTIONS seja criado primeiro
+    aws_api_gateway_method.options_token
   ]
 }
 
@@ -238,7 +236,7 @@ resource "aws_api_gateway_method_response" "options_token_response" {
     "application/json" = "Empty"
   }
   depends_on = [
-    aws_api_gateway_method.options_token # Garante que o método OPTIONS seja criado primeiro
+    aws_api_gateway_method.options_token
   ]
 }
 
@@ -254,7 +252,8 @@ resource "aws_api_gateway_integration_response" "options_token_integration_respo
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
   }
   depends_on = [
-    aws_api_gateway_integration.options_token_integration # Garante que a integração OPTIONS esteja criada
+    aws_api_gateway_integration.options_token_integration,
+    aws_api_gateway_method_response.options_token_response # ADICIONADO: Depende da Method Response
   ]
 }
 # --- Fim da adição para /oauth/token ---
@@ -342,7 +341,7 @@ resource "aws_api_gateway_integration" "options_validar_integration" {
     "application/json" = "{\"statusCode\": 200}"
   }
   depends_on = [
-    aws_api_gateway_method.options_validar # Garante que o método OPTIONS seja criado primeiro
+    aws_api_gateway_method.options_validar
   ]
 }
 
@@ -362,7 +361,7 @@ resource "aws_api_gateway_method_response" "options_validar_response" {
     "application/json" = "Empty"
   }
   depends_on = [
-    aws_api_gateway_method.options_validar # Garante que o método OPTIONS seja criado primeiro
+    aws_api_gateway_method.options_validar
   ]
 }
 
@@ -378,7 +377,8 @@ resource "aws_api_gateway_integration_response" "options_validar_integration_res
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
   }
   depends_on = [
-    aws_api_gateway_integration.options_validar_integration # Garante que a integração OPTIONS esteja criada
+    aws_api_gateway_integration.options_validar_integration,
+    aws_api_gateway_method_response.options_validar_response # ADICIONADO: Depende da Method Response
   ]
 }
 
@@ -398,7 +398,6 @@ resource "aws_api_gateway_method_response" "token_response" {
     "method.response.header.Access-Control-Allow-Headers" = true,
     "method.response.header.Access-Control-Allow-Methods" = true
   }
-  # Adicionando dependência para garantir que o método POST_TOKEN exista
   depends_on = [
     aws_api_gateway_method.post_token
   ]
@@ -417,7 +416,8 @@ resource "aws_api_gateway_integration_response" "token_integration_response" {
   }
 
   depends_on = [
-    aws_api_gateway_integration.token_integration # Já existia
+    aws_api_gateway_integration.token_integration,
+    aws_api_gateway_method_response.token_response # ADICIONADO: Depende da Method Response
   ]
 }
 
@@ -437,7 +437,6 @@ resource "aws_api_gateway_method_response" "validar_response" {
     "method.response.header.Access-Control-Allow-Headers" = true,
     "method.response.header.Access-Control-Allow-Methods" = true
   }
-  # Adicionando dependência para garantir que o método POST_VALIDAR exista
   depends_on = [
     aws_api_gateway_method.post_validar
   ]
@@ -456,6 +455,7 @@ resource "aws_api_gateway_integration_response" "validar_integration_response" {
   }
 
   depends_on = [
-    aws_api_gateway_integration.validar_integration # Já existia
+    aws_api_gateway_integration.validar_integration,
+    aws_api_gateway_method_response.validar_response # ADICIONADO: Depende da Method Response
   ]
 }
