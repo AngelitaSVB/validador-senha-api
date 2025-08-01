@@ -39,8 +39,9 @@ public class AuthController {
                 logger.info("JWT Secret initialized with key length: {}", jwtSecret.length());
         }
 
-        @PostMapping(value = "/token", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<?> gerarToken(@RequestParam String grant_type,
+        @PostMapping(value = "/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<?> gerarToken(
+                        @RequestParam String grant_type,
                         @RequestParam String client_id,
                         @RequestParam String client_secret) {
                 logger.info("Requisição recebida em /oauth/token com grant_type={}, client_id={}", grant_type,
