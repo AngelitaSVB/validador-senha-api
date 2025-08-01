@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,32 +34,33 @@ public class AuthController {
         }
 
         @PostMapping("/token")
-        public ResponseEntity<?> gerarToken(
-                        @RequestParam String grant_type,
+        public ResponseEntity<?> gerarToken(@RequestParam String grant_type,
                         @RequestParam String client_id,
                         @RequestParam String client_secret) {
 
                 if ("client_credentials".equals(grant_type)
-                                && client_id.equals(clientId)
-                                && client_secret.equals(clientSecret)) {
+                                && client_id.equals(this.clientId)
+                                && client_secret.equals(this.clientSecret)) {
 
-                        String jwt = Jwts.builder()
+                        String accessToken = Jwts.builder()
                                         .setSubject(client_id)
                                         .setIssuedAt(new Date())
-                                        .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1h
+                                        .setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000)) // 1 hora
                                         .signWith(secretKey, SignatureAlgorithm.HS256)
                                         .compact();
 
                         return ResponseEntity.ok(Map.of(
-                                        "access_token", jwt,
+                                        "access_token", accessToken,
                                         "token_type", "Bearer",
-                                        "expires_in", "3600"));
+                                        "expires_in", 3600));
                 } else {
-                        return ResponseEntity.status(401).body(Map.of("error", "Credenciais inválidas"));
+                        return ResponseEntity
+                                        .status(HttpStatus.UNAUTHORIZED)
+                                        .body(Map.of("error", "Credenciais inválidas"));
                 }
         }
 
-        @GetMapping("/oauth/health")
+        @GetMapping("/health")
         public ResponseEntity<String> healthCheck() {
                 return ResponseEntity.ok("OK");
         }
