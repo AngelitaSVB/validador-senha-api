@@ -38,18 +38,17 @@ resource "aws_cloudwatch_log_group" "validador_logs" {
 
 resource "aws_ecs_task_definition" "validador_task" {
   family                   = "validador-task-${random_id.suffix.hex}"
-  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = var.execution_role_arn
-  task_role_arn            = var.task_role_arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "validador"
-      image     = var.backend_image_url
-      essential = true
+      name      = "validador",
+      image     = var.image_url,
+      essential = true,
       portMappings = [
         {
           containerPort = 8080
