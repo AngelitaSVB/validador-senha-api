@@ -118,7 +118,7 @@ resource "aws_lb_target_group" "validador_tg" {
   target_type  = "ip"
 
   health_check {
-    path                = "/actuator/health"
+    path                = "/oauth/health"
     protocol            = "HTTP"
     matcher             = "200-399"
     interval            = 30
