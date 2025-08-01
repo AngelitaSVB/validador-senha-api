@@ -54,7 +54,7 @@ public class AuthController {
                                         "token_type", "Bearer",
                                         "expires_in", "3600"));
                 } else {
-                        return ResponseEntity.status(401).body("Credenciais inválidas");
+                        return ResponseEntity.status(401).body(Map.of("error", "Credenciais inválidas"));
                 }
         }
 
