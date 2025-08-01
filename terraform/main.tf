@@ -47,7 +47,7 @@ resource "aws_ecs_task_definition" "validador_task" {
   container_definitions = jsonencode([
     {
       name        = "validador",
-      image = var.container_image
+      image       = var.image_url,
       essential   = true,
       portMappings = [
         {
@@ -57,10 +57,10 @@ resource "aws_ecs_task_definition" "validador_task" {
         }
       ],
       environment = [
-  { name = "CLIENT_ID",     value = var.client_id },
-  { name = "CLIENT_SECRET", value = var.client_secret },
-  { name = "JWT_SECRET",    value = var.jwt_secret }
-]
+        { name = "CLIENT_ID",       value = "frontend-itau" },
+        { name = "CLIENT_SECRET", value = "segredo123" },
+        { name = "JWT_SECRET",      value = "itau-secret-itau-secret-itau-secret" }
+      ],
       logConfiguration = {
         logDriver = "awslogs",
         options = {
@@ -181,10 +181,6 @@ resource "aws_api_gateway_method" "post_token" {
   resource_id   = aws_api_gateway_resource.token.id
   http_method   = "POST"
   authorization = "NONE"
-
-  request_parameters = {
-    "method.request.header.Authorization" = true
-  }
 }
 
 resource "aws_api_gateway_integration" "token_integration" {
@@ -198,7 +194,7 @@ resource "aws_api_gateway_integration" "token_integration" {
   content_handling        = "CONVERT_TO_TEXT"
 
   request_parameters = {
-    "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.Accept" = "'application/json'"
   }
 }
 
@@ -279,10 +275,6 @@ resource "aws_api_gateway_method" "post_validar" {
   resource_id   = aws_api_gateway_resource.validar.id
   http_method   = "POST"
   authorization = "NONE"
-
-  request_parameters = {
-    "method.request.header.Authorization" = true
-  }
 }
 
 resource "aws_api_gateway_integration" "validar_integration" {
@@ -296,7 +288,7 @@ resource "aws_api_gateway_integration" "validar_integration" {
   content_handling        = "CONVERT_TO_TEXT"
 
   request_parameters = {
-    "integration.request.header.Authorization" = "method.request.header.Authorization"
+    "integration.request.header.Accept" = "'application/json'"
   }
 }
 
