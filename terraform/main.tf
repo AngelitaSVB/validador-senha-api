@@ -193,6 +193,10 @@ resource "aws_api_gateway_integration" "token_integration" {
   uri                     = "http://${aws_lb.validador_lb.dns_name}/oauth/token"
   passthrough_behavior    = "WHEN_NO_MATCH"
   content_handling        = "CONVERT_TO_TEXT"
+
+  request_parameters = {
+    "integration.request.header.Accept" = "'application/json'"
+  }
 }
 
 resource "aws_api_gateway_resource" "api" {
@@ -223,6 +227,10 @@ resource "aws_api_gateway_integration" "validar_integration" {
   uri                     = "http://${aws_lb.validador_lb.dns_name}/api/validar"
   passthrough_behavior    = "WHEN_NO_MATCH"
   content_handling        = "CONVERT_TO_TEXT"
+
+  request_parameters = {
+    "integration.request.header.Accept" = "'application/json'"
+  }
 }
 
 resource "aws_api_gateway_deployment" "validador_deploy" {
