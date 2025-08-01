@@ -20,7 +20,7 @@
 *.iml
 
 # Terraform
-#.terraform/
+.terraform/
 terraform.tfstate*
 #terraform.tfvars
 crash.log
@@ -32,6 +32,3 @@ Thumbs.db
 # Arquivos sensíveis
 *.env
 *.secret
-
-terraform/terraform.tfvars
-
