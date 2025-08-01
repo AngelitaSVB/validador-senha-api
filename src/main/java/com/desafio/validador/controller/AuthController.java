@@ -57,4 +57,9 @@ public class AuthController {
                         return ResponseEntity.status(401).body("Credenciais inválidas");
                 }
         }
+
+        @GetMapping("/health")
+        public ResponseEntity<String> healthCheck() {
+                return ResponseEntity.ok("OK");
+        }
 }
