@@ -1,4 +1,3 @@
-
 provider "aws" {
   region = "sa-east-1"
 }
@@ -47,9 +46,9 @@ resource "aws_ecs_task_definition" "validador_task" {
 
   container_definitions = jsonencode([
     {
-      name      = "validador",
-      image     = var.image_url,
-      essential = true,
+      name        = "validador",
+      image       = var.image_url,
+      essential   = true,
       portMappings = [
         {
           containerPort = 8080,
@@ -58,9 +57,9 @@ resource "aws_ecs_task_definition" "validador_task" {
         }
       ],
       environment = [
-        { name = "CLIENT_ID",     value = "frontend-itau" },
+        { name = "CLIENT_ID",       value = "frontend-itau" },
         { name = "CLIENT_SECRET", value = "segredo123" },
-        { name = "JWT_SECRET",    value = "itau-secret-itau-secret-itau-secret" }
+        { name = "JWT_SECRET",      value = "itau-secret-itau-secret-itau-secret" }
       ],
       logConfiguration = {
         logDriver = "awslogs",
@@ -110,11 +109,11 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb_target_group" "validador_tg" {
-  name         = "validador-tg-${random_id.suffix.hex}"
-  port         = 8080
-  protocol     = "HTTP"
-  vpc_id       = var.vpc_id
-  target_type  = "ip"
+  name        = "validador-tg-${random_id.suffix.hex}"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
 
   health_check {
     path                = "/oauth/health"
@@ -146,8 +145,8 @@ resource "aws_ecs_service" "validador_service" {
   desired_count   = 1
 
   network_configuration {
-    subnets         = var.subnet_ids
-    security_groups = [aws_security_group.lb_sg.id]
+    subnets          = var.subnet_ids
+    security_groups  = [aws_security_group.lb_sg.id]
     assign_public_ip = true
   }
 
@@ -199,6 +198,56 @@ resource "aws_api_gateway_integration" "token_integration" {
   }
 }
 
+# --- Adição para o método OPTIONS em /oauth/token ---
+resource "aws_api_gateway_method" "options_token" {
+  rest_api_id   = aws_api_gateway_rest_api.validador_api.id
+  resource_id   = aws_api_gateway_resource.token.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "options_token_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.validador_api.id
+  resource_id             = aws_api_gateway_resource.token.id
+  http_method             = aws_api_gateway_method.options_token.http_method
+  type                    = "MOCK"
+  passthrough_behavior    = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "options_token_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Headers" = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "options_token_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  resource_id = aws_api_gateway_resource.token.id
+  http_method = "OPTIONS"
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'",
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+  }
+}
+# --- Fim da adição para /oauth/token ---
+
 resource "aws_api_gateway_resource" "api" {
   rest_api_id = aws_api_gateway_rest_api.validador_api.id
   parent_id   = aws_api_gateway_rest_api.validador_api.root_resource_id
@@ -236,9 +285,27 @@ resource "aws_api_gateway_integration" "validar_integration" {
 resource "aws_api_gateway_deployment" "validador_deploy" {
   depends_on = [
     aws_api_gateway_integration.token_integration,
-    aws_api_gateway_integration.validar_integration
+    aws_api_gateway_integration.validar_integration,
+    aws_api_gateway_method_response.token_response,          # Adicionado
+    aws_api_gateway_integration_response.token_integration_response, # Adicionado
+    aws_api_gateway_method.options_token,                    # Adicionado
+    aws_api_gateway_integration.options_token_integration,   # Adicionado
+    aws_api_gateway_method_response.options_token_response,  # Adicionado
+    aws_api_gateway_integration_response.options_token_integration_response, # Adicionado
+    aws_api_gateway_method_response.validar_response,        # Adicionado
+    aws_api_gateway_integration_response.validar_integration_response, # Adicionado
+    aws_api_gateway_method.options_validar,                  # Já existia, mas bom ter explícito
+    aws_api_gateway_integration.options_validar_integration, # Já existia, mas bom ter explícito
+    aws_api_gateway_method_response.options_validar_response, # Já existia, mas bom ter explícito
+    aws_api_gateway_integration_response.options_validar_integration_response # Já existia, mas bom ter explícito
   ]
   rest_api_id = aws_api_gateway_rest_api.validador_api.id
+  # Adicione um atributo que force uma nova implantação em cada 'terraform apply'
+  # Isso é útil durante o desenvolvimento para garantir que as mudanças de CORS sejam aplicadas.
+  # Em produção, você pode querer controlar isso de forma mais granular.
+  triggers = {
+    redeployment = timestamp()
+  }
 }
 
 resource "aws_api_gateway_stage" "validador_stage" {
@@ -295,7 +362,7 @@ resource "aws_api_gateway_integration_response" "options_validar_integration_res
   }
 }
 
-# ======= BLOCO ADICIONADO: Resposta do método /oauth/token =======
+# ======= BLOCO ADICIONADO: Resposta do método /oauth/token (original, sem alterações aqui) =======
 resource "aws_api_gateway_method_response" "token_response" {
   rest_api_id = aws_api_gateway_rest_api.validador_api.id
   resource_id = aws_api_gateway_resource.token.id
@@ -328,7 +395,7 @@ resource "aws_api_gateway_integration_response" "token_integration_response" {
   depends_on = [aws_api_gateway_integration.token_integration]
 }
 
-# ======= BLOCO ADICIONADO: Resposta do método /api/validar =======
+# ======= BLOCO ADICIONADO: Resposta do método /api/validar (original, sem alterações aqui) =======
 resource "aws_api_gateway_method_response" "validar_response" {
   rest_api_id = aws_api_gateway_rest_api.validador_api.id
   resource_id = aws_api_gateway_resource.validar.id
