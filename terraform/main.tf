@@ -38,36 +38,37 @@ resource "aws_cloudwatch_log_group" "validador_logs" {
 
 resource "aws_ecs_task_definition" "validador_task" {
   family                   = "validador-task-${random_id.suffix.hex}"
-  requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {
-      name      = "validador",
-      image     = var.image_url,
-      essential = true,
+      name      = "validador"
+      image     = var.backend_image_url
+      essential = true
       portMappings = [
         {
-          containerPort = 8080,
-          hostPort      = 8080,
+          containerPort = 8080
+          hostPort      = 8080
           protocol      = "tcp"
         }
       ],
       environment = [
         {
           name  = "CLIENT_ID"
-          value = var.client_id
+          value = "frontend-itau"
         },
         {
           name  = "CLIENT_SECRET"
-          value = var.client_secret
+          value = "segredo123"
         },
         {
           name  = "JWT_SECRET"
-          value = var.jwt_secret
+          value = "itau-secret-itau-secret-itau-secret"
         }
       ],
       logConfiguration = {
