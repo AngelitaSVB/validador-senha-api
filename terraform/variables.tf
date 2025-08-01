@@ -32,7 +32,3 @@ variable "region" {
   description = "Região da AWS"
   default     = "sa-east-1"
 }
-variable "container_image" {
-  description = "URL da imagem Docker do validador de senha"
-  type        = string
-}
