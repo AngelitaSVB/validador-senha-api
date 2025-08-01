@@ -276,7 +276,7 @@ resource "aws_api_gateway_integration" "token_integration" {
   #     connection_type = "VPC_LINK"
   #     connection_id = aws_api_gateway_vpc_link.validador_vpc_link.id
   uri                     = "http://${aws_lb.validador_lb.dns_name}/oauth/token"
-  passthrough_behavior    = "when_no_match" # Permite que o corpo da requisição seja passado
+  passthrough_behavior    = "WHEN_NO_MATCH" # Permite que o corpo da requisição seja passado
 }
 
 # Integration for OPTIONS /oauth/token (CORS preflight)
@@ -329,7 +329,7 @@ resource "aws_api_gateway_integration" "validar_integration" {
   integration_http_method = "POST"
   type                    = "HTTP"
   uri                     = "http://${aws_lb.validador_lb.dns_name}/api/validar"
-  passthrough_behavior    = "when_no_match" # Permite que o corpo da requisição seja passado
+  passthrough_behavior    = "WHEN_NO_MATCH" # Permite que o corpo da requisição seja passado
 }
 
 # Integration for OPTIONS /api/validar (CORS preflight)
