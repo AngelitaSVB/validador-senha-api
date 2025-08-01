@@ -32,3 +32,6 @@ Thumbs.db
 # Arquivos sensíveis
 *.env
 *.secret
+
+terraform/terraform.tfvars
+

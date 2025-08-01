@@ -14,11 +14,12 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(
+                        .allowedOriginPatterns(
                                 "http://localhost:4200",
                                 "http://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
                                 "https://validador-dev-placeholder.s3-website-sa-east-1.amazonaws.com",
-                                "https://0j1i5shvn1.execute-api.sa-east-1.amazonaws.com")
+                                "https://*.execute-api.sa-east-1.amazonaws.com" // DINÂMICO!
+                )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(false);
